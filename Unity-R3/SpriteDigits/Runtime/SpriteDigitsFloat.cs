@@ -43,52 +43,49 @@ namespace radiants.SpriteDigits
 
 		#region Child Sprites Management
 
-		private List<SpriteRenderer> NumberRenderers = new List<SpriteRenderer>();
+		private List<DigitsDisplayContainer> NumberDisplays = new List<DigitsDisplayContainer>();
 
-		private SpriteRenderer MinusRenderer = null;
+		private DigitsDisplayContainer MinusDisplay = null;
 
-		private SpriteRenderer DecimalPointRenderer = null;
+		private DigitsDisplayContainer DecimalPointDisplay = null;
 
-		protected override void PrepareRenderers()
+		protected override void PrepareDisplays()
 		{
-			if (MinusRenderer == null)
-				MinusRenderer = CreateChildRenderer();
+			if (MinusDisplay == null)
+				MinusDisplay = CreateChildDisplay();
 
-			if (DecimalPointRenderer == null)
-				DecimalPointRenderer = CreateChildRenderer();
+			if (DecimalPointDisplay == null)
+				DecimalPointDisplay = CreateChildDisplay();
 
 			//minimum required
-			PrepareNumberRenderers(DisplayDecimalPlaces + 1);
+			PrepareNumberDisplays(DisplayDecimalPlaces + 1);
 		}
 
-		private void PrepareNumberRenderers(int requiredNumber)
+		private void PrepareNumberDisplays(int requiredNumber)
 		{
-			if (NumberRenderers.Count >= requiredNumber) return;
+			if (NumberDisplays.Count >= requiredNumber) return;
 
-			for (int i = NumberRenderers.Count; i < requiredNumber; i++)
+			for (int i = NumberDisplays.Count; i < requiredNumber; i++)
 			{
-				NumberRenderers.Add(CreateChildRenderer());
+				NumberDisplays.Add(CreateChildDisplay());
 			}
 		}
-
-		protected override void DestroyAllRenderers()
+		protected override void UnLinkAllDisplays()
 		{
-			for (int i = NumberRenderers.Count - 1; i >= 0; i--)
-			{
-				DestroyObject(NumberRenderers[i].gameObject);
-			}
-			DestroyObject(MinusRenderer.gameObject);
-			DestroyObject(DecimalPointRenderer.gameObject);
+			NumberDisplays.Clear();
+			MinusDisplay = null;
+			DecimalPointDisplay = null;
 		}
 
-		protected override void ActForAllRenderers(Action<SpriteRenderer> action)
+
+		protected override void ActForAllDisplays(Action<DigitsDisplayContainer> action)
 		{
-			foreach (var number in NumberRenderers)
+			foreach (var number in NumberDisplays)
 			{
 				action?.Invoke(number);
 			}
-			action?.Invoke(MinusRenderer);
-			action?.Invoke(DecimalPointRenderer);
+			action?.Invoke(MinusDisplay);
+			action?.Invoke(DecimalPointDisplay);
 		}
 
 		#endregion
@@ -122,7 +119,7 @@ namespace radiants.SpriteDigits
 			int digitsBeforePoint = CalcDigitsBeforeDecimalPoint(num);
 
 			//prepare renderers dynamically
-			PrepareNumberRenderers(DisplayDecimalPlaces + digitsBeforePoint);
+			PrepareNumberDisplays(DisplayDecimalPlaces + digitsBeforePoint);
 
 			//check sprite height
 			float spriteHeight = Digits.NumberSprites[0].bounds.size.y;
@@ -130,7 +127,7 @@ namespace radiants.SpriteDigits
 			float letterScale = size / spriteHeight;
 
 			//set sprite and check sprites' total width
-			float originalWidth = SetNumberSpriteToRenderers(num, ref digitsBeforePoint, displayMinus);
+			float originalWidth = SetNumberSpriteToDisplays(num, ref digitsBeforePoint, displayMinus);
 			float widthWithSpace = originalWidth * letterScale + (digitsBeforePoint + DisplayDecimalPlaces) * Spacing;
 			if (displayMinus) widthWithSpace += Spacing;
 
@@ -148,7 +145,7 @@ namespace radiants.SpriteDigits
 		}
 
 
-		private float SetNumberSpriteToRenderers(decimal num, ref int digitsBeforePoint, bool displayMinus)
+		private float SetNumberSpriteToDisplays(decimal num, ref int digitsBeforePoint, bool displayMinus)
 		{
 			//calc sprites' total width
 			float width = 0;
@@ -174,15 +171,15 @@ namespace radiants.SpriteDigits
 				}
 
 				var sprite = Digits.NumberSprites[number];
-				NumberRenderers[i].enabled = true;
-				NumberRenderers[i].sprite = sprite;
+				NumberDisplays[i].enabled = true;
+				NumberDisplays[i].sprite = sprite;
 
 				width += sprite.bounds.size.x;
 			}
 
 			//point
-			DecimalPointRenderer.enabled = true;
-			DecimalPointRenderer.sprite = Digits.DecimalPointSprite;
+			DecimalPointDisplay.enabled = true;
+			DecimalPointDisplay.sprite = Digits.DecimalPointSprite;
 			width += Digits.DecimalPointSprite.bounds.size.x;
 
 			//before point
@@ -210,8 +207,8 @@ namespace radiants.SpriteDigits
 				var sprite = Digits.NumberSprites[number];
 
 				int rendererIndex = i + DisplayDecimalPlaces;
-				NumberRenderers[rendererIndex].enabled = true;
-				NumberRenderers[rendererIndex].sprite = sprite;
+				NumberDisplays[rendererIndex].enabled = true;
+				NumberDisplays[rendererIndex].sprite = sprite;
 
 				width += sprite.bounds.size.x;
 			}
@@ -220,9 +217,9 @@ namespace radiants.SpriteDigits
 			if(carryUp)
 			{
 				int finalIndex = DisplayDecimalPlaces + digitsBeforePoint;
-				PrepareNumberRenderers(finalIndex+1);
-				NumberRenderers[finalIndex].enabled = true;
-				NumberRenderers[finalIndex].sprite = Digits.NumberSprites[1];
+				PrepareNumberDisplays(finalIndex+1);
+				NumberDisplays[finalIndex].enabled = true;
+				NumberDisplays[finalIndex].sprite = Digits.NumberSprites[1];
 				width += Digits.NumberSprites[1].bounds.size.x;
 
 				++digitsBeforePoint;
@@ -230,17 +227,17 @@ namespace radiants.SpriteDigits
 
 
 			//disabled
-			for (int i = DisplayDecimalPlaces + digitsBeforePoint; i < NumberRenderers.Count; i++)
+			for (int i = DisplayDecimalPlaces + digitsBeforePoint; i < NumberDisplays.Count; i++)
 			{
-				NumberRenderers[i].enabled = false;
+				NumberDisplays[i].enabled = false;
 			}
 
 
 			//minus
-			MinusRenderer.enabled = displayMinus;
+			MinusDisplay.enabled = displayMinus;
 			if(displayMinus)
 			{
-				MinusRenderer.sprite = Digits.MinusDisplaySprite;
+				MinusDisplay.sprite = Digits.MinusDisplaySprite;
 				width += Digits.MinusDisplaySprite.bounds.size.x;
 			}
 
@@ -255,28 +252,28 @@ namespace radiants.SpriteDigits
 			//after point
 			for (int i = 0; i < DisplayDecimalPlaces; i++)
 			{
-				var renderer = NumberRenderers[i];
+				var renderer = NumberDisplays[i];
 				var spriteBounds = renderer.sprite.bounds;
-				SetRendererPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				SetDisplayPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//point
-			SetRendererPosition(ref caret, DecimalPointRenderer.transform, HorizontalPivot, VerticalPivot, DecimalPointRenderer.sprite.bounds,
+			SetDisplayPosition(ref caret, DecimalPointDisplay.transform, HorizontalPivot, VerticalPivot, DecimalPointDisplay.sprite.bounds,
 				letterScale, Spacing * spacingScale);
 
 			//before point
 			for (int i = 0; i < digitsBeforePoint; i++)
 			{
 				int index = i + DisplayDecimalPlaces;
-				var renderer = NumberRenderers[index];
+				var renderer = NumberDisplays[index];
 				var spriteBounds = renderer.sprite.bounds;
-				SetRendererPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				SetDisplayPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//set minus renderer if display
 			if (displayMinus)
 			{
-				SetRendererPosition(ref caret, MinusRenderer.transform, HorizontalPivot, VerticalPivot, MinusRenderer.sprite.bounds,
+				SetDisplayPosition(ref caret, MinusDisplay.transform, HorizontalPivot, VerticalPivot, MinusDisplay.sprite.bounds,
 					letterScale, Spacing * spacingScale);
 			}
 		}

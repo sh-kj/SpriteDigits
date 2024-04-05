@@ -55,45 +55,41 @@ namespace radiants.SpriteDigits
 
 		#region Child Sprites Management
 
-		private List<SpriteRenderer> NumberRenderers = new List<SpriteRenderer>();
+		private List<DigitsDisplayContainer> NumberDisplays = new List<DigitsDisplayContainer>();
 
-		private SpriteRenderer MinusRenderer = null;
+		private DigitsDisplayContainer MinusDisplay = null;
 
-		protected override void PrepareRenderers()
+		protected override void PrepareDisplays()
 		{
-			if (MinusRenderer == null)
-				MinusRenderer = CreateChildRenderer();
+			if (MinusDisplay == null)
+				MinusDisplay = CreateChildDisplay();
 
 			PrepareNumberRenderers(MaxDigitNum);
 		}
 
 		private void PrepareNumberRenderers(int digitNum)
 		{
-			if (NumberRenderers.Count >= digitNum) return;
+			if (NumberDisplays.Count >= digitNum) return;
 
-			for (int i = NumberRenderers.Count; i < digitNum; i++)
+			for (int i = NumberDisplays.Count; i < digitNum; i++)
 			{
-				NumberRenderers.Add(CreateChildRenderer());
+				NumberDisplays.Add(CreateChildDisplay());
 			}
 		}
 
-		protected override void DestroyAllRenderers()
+		protected override void UnLinkAllDisplays()
 		{
-			//Destroy all hidden child
-			for (int i = NumberRenderers.Count - 1; i >= 0; --i)
-			{
-				DestroyObject(NumberRenderers[i].gameObject);
-			}
-			DestroyObject(MinusRenderer.gameObject);
+			NumberDisplays.Clear();
+			MinusDisplay = null;
 		}
 
-		protected override void ActForAllRenderers(Action<SpriteRenderer> action)
+		protected override void ActForAllDisplays(Action<DigitsDisplayContainer> action)
 		{
-			foreach (var number in NumberRenderers)
+			foreach (var number in NumberDisplays)
 			{
 				action?.Invoke(number);
 			}
-			action?.Invoke(MinusRenderer);
+			action?.Invoke(MinusDisplay);
 		}
 
 		#endregion
@@ -148,7 +144,7 @@ namespace radiants.SpriteDigits
 			float letterScale = size / spriteHeight;
 
 			//set sprite and check sprites' total width
-			float originalWidth = SetNumberSpriteToRenderers(num, displayDigitNum, displayMinus);
+			float originalWidth = SetNumberSpriteToDisplays(num, displayDigitNum, displayMinus);
 			float widthWithSpace = originalWidth * letterScale + (displayDigitNum - 1) * Spacing;
 			if (displayMinus) widthWithSpace += Spacing;
 
@@ -165,36 +161,36 @@ namespace radiants.SpriteDigits
 			SetupSpritePositions(letterScale, spacingScale, widthWithSpace, displayDigitNum, displayMinus);
 		}
 
-		private float SetNumberSpriteToRenderers(long num, int displayDigitNum, bool displayMinus)
+		private float SetNumberSpriteToDisplays(long num, int displayDigitNum, bool displayMinus)
 		{
 			//calc sprites' total width
 			float width = 0;
 
-			for (int i = 0; i < NumberRenderers.Count; i++)
+			for (int i = 0; i < NumberDisplays.Count; i++)
 			{
-				var renderer = NumberRenderers[i];
+				var disp = NumberDisplays[i];
 				if(i >= displayDigitNum)
 				{
-					renderer.enabled = false;
+					disp.enabled = false;
 					continue;
 				}
 
-				renderer.enabled = true;
+				disp.enabled = true;
 				int count = (int)(num % 10);
 
 				var sprite = Digits.NumberSprites[count];
 				var spriteOriginalBounds = sprite.bounds.size;
-				renderer.sprite = sprite;
+				disp.sprite = sprite;
 
 				num /= 10;
 				width += spriteOriginalBounds.x;
 			}
 
-			MinusRenderer.enabled = displayMinus;
+			MinusDisplay.enabled = displayMinus;
 			if (displayMinus)
 			{
 				var minusSprite = Digits.MinusDisplaySprite;
-				MinusRenderer.sprite = minusSprite;
+				MinusDisplay.sprite = minusSprite;
 				if (minusSprite != null)
 					width += minusSprite.bounds.size.x;
 			}
@@ -209,17 +205,17 @@ namespace radiants.SpriteDigits
 
 			for (int i = 0; i < displayDigitNum; ++i)
 			{
-				var renderer = NumberRenderers[i];
-				var spriteBounds = renderer.sprite.bounds;
+				var disp = NumberDisplays[i];
+				var spriteBounds = disp.sprite.bounds;
 
 				//spriteBounds.min
-				SetRendererPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				SetDisplayPosition(ref caret, disp.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//set minus renderer if display
 			if(displayMinus)
 			{
-				SetRendererPosition(ref caret, MinusRenderer.transform, HorizontalPivot, VerticalPivot, MinusRenderer.sprite.bounds,
+				SetDisplayPosition(ref caret, MinusDisplay.transform, HorizontalPivot, VerticalPivot, MinusDisplay.sprite.bounds,
 					letterScale, Spacing * spacingScale);
 			}
 		}

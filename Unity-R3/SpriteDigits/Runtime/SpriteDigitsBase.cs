@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using R3;
 
 namespace radiants.SpriteDigits
@@ -11,6 +12,14 @@ namespace radiants.SpriteDigits
 		#region Serialize/Observables
 
 		protected Subject<Unit> RectTransformDimensionsChangeSubject = new Subject<Unit>();
+
+		[SerializeField]
+		protected SerializableReactiveProperty<DisplayMode> _DisplayMode = new SerializableReactiveProperty<DisplayMode>(DisplayMode.Sprite);
+		public DisplayMode DisplayMode
+		{
+			get { return _DisplayMode.Value; }
+			set { _DisplayMode.Value = value; }
+		}
 
 		[SerializeField]
 		protected SerializableReactiveProperty<Digits> _Digits = new SerializableReactiveProperty<Digits>();
@@ -29,6 +38,7 @@ namespace radiants.SpriteDigits
 		}
 
 		[SerializeField]
+		[Tooltip("Only available for Sprite mode.")]
 		protected SerializableReactiveProperty<int> _SortingLayerID = new SerializableReactiveProperty<int>(0);
 		public int SortingLayerID
 		{
@@ -36,6 +46,7 @@ namespace radiants.SpriteDigits
 			set { _SortingLayerID.Value = value; }
 		}
 		[SerializeField]
+		[Tooltip("Only available for Sprite mode.")]
 		protected SerializableReactiveProperty<int> _OrderInLayer = new SerializableReactiveProperty<int>(0);
 		public int OrderInLayer
 		{
@@ -50,6 +61,20 @@ namespace radiants.SpriteDigits
 			get { return _CustomMaterial.Value; }
 			set { _CustomMaterial.Value = value; }
 		}
+		public Material GetCustomOrDefaultMaterial()
+		{
+			if (CustomMaterial != null) return CustomMaterial;
+
+			switch(DisplayMode)
+			{
+				case DisplayMode.Image:
+					return null;
+				case DisplayMode.Sprite:
+				default:
+					return DefaultMaterialUtil.DefaultSpriteMaterial;
+			}
+		}
+
 
 		[SerializeField]
 		protected SerializableReactiveProperty<float> _Size = new SerializableReactiveProperty<float>(50f);
@@ -103,21 +128,23 @@ namespace radiants.SpriteDigits
 				.Subscribe(_ => ApplyNumbers())
 				.AddTo(Disposables);
 
+			_DisplayMode.Subscribe(_ => Refresh()).AddTo(Disposables);
+
 			_Digits.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_Size.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_Spacing.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_HorizontalPivot.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_VerticalPivot.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 
-			_CustomMaterial.Subscribe(_mat => SetMaterialToRenderers(GetMaterialForSprite(_mat)))
+			_CustomMaterial.Subscribe(_mat => SetMaterialToDisplays(_mat))
 				.AddTo(Disposables);
 
-			_Color.Subscribe(_col => SetColorToRenderers(_col))
+			_Color.Subscribe(_col => SetColorToDisplays(_col))
 				.AddTo(Disposables);
 
-			_SortingLayerID.Subscribe(_ => SetSortToRenderers(SortingLayerID, OrderInLayer))
+			_SortingLayerID.Subscribe(_ => SetSortToDisplays(SortingLayerID, OrderInLayer))
 				.AddTo(Disposables);
-			_OrderInLayer.Subscribe(_ => SetSortToRenderers(SortingLayerID, OrderInLayer))
+			_OrderInLayer.Subscribe(_ => SetSortToDisplays(SortingLayerID, OrderInLayer))
 				.AddTo(Disposables);
 
 			SubscribeObservables();
@@ -157,12 +184,13 @@ namespace radiants.SpriteDigits
 		/// </summary>
 		public virtual void Refresh()
 		{
-			PrepareRenderers();
+			DestroyAllDisplays();
+			PrepareDisplays();
 			ApplyNumbers();
 
-			SetMaterialToRenderers(GetMaterialForSprite(CustomMaterial));
-			SetColorToRenderers(this.Color);
-			SetSortToRenderers(SortingLayerID, OrderInLayer);
+			SetMaterialToDisplays(CustomMaterial);
+			SetColorToDisplays(this.Color);
+			SetSortToDisplays(SortingLayerID, OrderInLayer);
 		}
 
 
@@ -172,25 +200,27 @@ namespace radiants.SpriteDigits
 
 		private void OnEnable()
 		{
-			PrepareRenderers();
+			PrepareDisplays();
 			SubscribeObservablesBasic();
 		}
 
 		private void OnDisable()
 		{
 			Disposables.Clear();
-			DisableAllRenderers();
+			DisableAllDisplays();
 		}
 
 		private void OnDestroy()
 		{
 			Disposables.Dispose();
-			DestroyAllRenderers();
+			DestroyAllDisplays();
 			UnsbscribeUndo();
 		}
 
 		protected void DestroyObject(GameObject obj)
 		{
+			if (obj == null) return;
+
 			if (Application.isPlaying)
 				Destroy(obj);
 			else
@@ -206,9 +236,9 @@ namespace radiants.SpriteDigits
 
 		#region Renderer Management
 
-		protected abstract void PrepareRenderers();
+		protected abstract void PrepareDisplays();
 
-		protected SpriteRenderer CreateChildRenderer()
+		protected DigitsDisplayContainer CreateChildDisplay()
 		{
 			GameObject child = new GameObject("");
 			//debug
@@ -217,45 +247,67 @@ namespace radiants.SpriteDigits
 			child.transform.SetParent(transform);
 			child.transform.localRotation = Quaternion.identity;
 			child.layer = gameObject.layer;
-			var spr = child.AddComponent<SpriteRenderer>();
-			spr.enabled = false;
+			child.gameObject.name = "SpriteDigitsDisplay";
 
-			//set current material/color/sort values
-			spr.sharedMaterial = GetMaterialForSprite(CustomMaterial);
-			spr.color = Color;
-			spr.sortingLayerID = SortingLayerID;
-			spr.sortingOrder = OrderInLayer;
-			return spr;
-		}
 
-		protected abstract void DestroyAllRenderers();
-
-		protected void DisableAllRenderers()
-		{
-			ActForAllRenderers(_rend => _rend.enabled = false);
-		}
-
-		protected void SetMaterialToRenderers(Material mat)
-		{
-			ActForAllRenderers(_rend => _rend.sharedMaterial = mat);
-		}
-
-		protected void SetColorToRenderers(Color col)
-		{
-			ActForAllRenderers(_rend => _rend.color = col);
-		}
-
-		protected void SetSortToRenderers(int layerID, int order)
-		{
-			ActForAllRenderers(_rend => 
+			switch (DisplayMode)
 			{
-				_rend.sortingLayerID = layerID;
-				_rend.sortingOrder = order;
-			});
+				case DisplayMode.Image:
+					var img = child.AddComponent<Image>();
+					img.enabled = false;
+					//img.material
+					return new DigitsDisplayContainer(DisplayMode.Image, null, img);
+
+				case DisplayMode.Sprite:
+				default:
+					var spr = child.AddComponent<SpriteRenderer>();
+					spr.enabled = false;
+
+					//set current material/color/sort values
+					spr.sharedMaterial = CustomMaterial ?? DefaultMaterialUtil.DefaultSpriteMaterial;
+					spr.color = Color;
+					spr.sortingLayerID = SortingLayerID;
+					spr.sortingOrder = OrderInLayer;
+					return new DigitsDisplayContainer(DisplayMode.Sprite, spr, null);
+			}
 		}
 
-		protected abstract void ActForAllRenderers(System.Action<SpriteRenderer> action);
+		protected abstract void UnLinkAllDisplays();
 
+		protected void DestroyAllDisplays()
+		{
+			UnLinkAllDisplays();
+			for (int i = transform.childCount - 1; i >= 0; i--)
+			{
+				var child = transform.GetChild(i);
+				if(child.name == "SpriteDigitsDisplay")
+				{
+					DestroyObject(child.gameObject);
+				}
+			}
+		}
+
+		protected void DisableAllDisplays()
+		{
+			ActForAllDisplays(_rend => _rend.enabled = false);
+		}
+
+		protected void SetMaterialToDisplays(Material mat)
+		{
+			ActForAllDisplays(_rend => _rend.SetMaterial(mat));
+		}
+
+		protected void SetColorToDisplays(Color col)
+		{
+			ActForAllDisplays(_rend => _rend.color = col);
+		}
+
+		protected void SetSortToDisplays(int layerID, int order)
+		{
+			ActForAllDisplays(_rend => _rend.SetSort(layerID, order));
+		}
+
+		protected abstract void ActForAllDisplays(System.Action<DigitsDisplayContainer> action);
 
 		#endregion
 
@@ -299,7 +351,7 @@ namespace radiants.SpriteDigits
 			return origin;
 		}
 
-		protected static void SetRendererPosition(ref Vector3 caret, Transform trans, HorizontalPivot horizontal, VerticalPivot vertical,
+		protected static void SetDisplayPosition(ref Vector3 caret, Transform trans, HorizontalPivot horizontal, VerticalPivot vertical,
 			Bounds spriteBounds, float scale, float spacing)
 		{
 			Vector3 offset = new Vector3();
@@ -321,18 +373,8 @@ namespace radiants.SpriteDigits
 		}
 
 		#endregion
-
-		#region Material util
-
-		protected static Material GetMaterialForSprite(Material mat)
-		{
-			if (mat == null)
-				return DefaultSpriteMaterialUtil.DefaultSpriteMaterial;
-			return mat;
-		}
-
-		#endregion
-
 	}
+
+
 
 }
