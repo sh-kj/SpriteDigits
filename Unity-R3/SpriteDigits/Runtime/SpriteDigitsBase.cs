@@ -129,8 +129,8 @@ namespace radiants.SpriteDigits
 				.AddTo(Disposables);
 
 			_DisplayMode.Subscribe(_ => Refresh()).AddTo(Disposables);
+			_Digits.Subscribe(_ => Refresh()).AddTo(Disposables);
 
-			_Digits.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_Size.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_Spacing.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
 			_HorizontalPivot.Subscribe(_ => ApplyNumbers()).AddTo(Disposables);
@@ -264,7 +264,7 @@ namespace radiants.SpriteDigits
 					spr.enabled = false;
 
 					//set current material/color/sort values
-					spr.sharedMaterial = CustomMaterial ?? DefaultMaterialUtil.DefaultSpriteMaterial;
+					spr.sharedMaterial = GetCustomOrDefaultMaterial();
 					spr.color = Color;
 					spr.sortingLayerID = SortingLayerID;
 					spr.sortingOrder = OrderInLayer;

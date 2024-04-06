@@ -13,19 +13,19 @@ namespace radiants.SpriteDigits
 		#region Serialize/Observables
 
 		[SerializeField]
-		private SerializableReactiveProperty<double> _Value = new SerializableReactiveProperty<double>(0d);
-		public double Value
-		{
-			get { return _Value.Value; }
-			set { _Value.Value = value; }
-		}
-
-		[SerializeField]
 		private SerializableReactiveProperty<int> _DisplayDecimalPlaces = new SerializableReactiveProperty<int>(2);
 		public int DisplayDecimalPlaces
 		{
 			get { return _DisplayDecimalPlaces.Value; }
 			set { _DisplayDecimalPlaces.Value = value; }
+		}
+
+		[SerializeField]
+		private SerializableReactiveProperty<double> _Value = new SerializableReactiveProperty<double>(0d);
+		public double Value
+		{
+			get { return _Value.Value; }
+			set { _Value.Value = value; }
 		}
 
 		#endregion

@@ -13,16 +13,7 @@ namespace radiants.SpriteDigits
 		#region Serialize/Observables
 
 		[SerializeField]
-		private SerializableReactiveProperty<long> _Value = new SerializableReactiveProperty<long>(0);
-		public long Value
-		{
-			get { return _Value.Value; }
-			set { _Value.Value = value; }
-		}
-
-
-		[SerializeField]
-		private SerializableReactiveProperty<int> _MaxDigitNum = new SerializableReactiveProperty<int>(-1);
+		private SerializableReactiveProperty<int> _MaxDigitNum = new SerializableReactiveProperty<int>(0);
 		public int MaxDigitNum
 		{
 			get { return _MaxDigitNum.Value; }
@@ -35,6 +26,14 @@ namespace radiants.SpriteDigits
 		{
 			get { return _PaddingMode.Value; }
 			set { _PaddingMode.Value = value; }
+		}
+
+		[SerializeField]
+		private SerializableReactiveProperty<long> _Value = new SerializableReactiveProperty<long>(0);
+		public long Value
+		{
+			get { return _Value.Value; }
+			set { _Value.Value = value; }
 		}
 
 		#endregion
@@ -120,14 +119,14 @@ namespace radiants.SpriteDigits
 			int digitNum = GetDigitNumber(num);
 
 			//counter-stop
-			if(MaxDigitNum != -1 && MaxDigitNum < digitNum)
+			if(MaxDigitNum != 0 && MaxDigitNum < digitNum)
 			{
 				num = Power(10, MaxDigitNum) - 1;
 				digitNum = MaxDigitNum;
 			}
 
 			int displayDigitNum = digitNum;
-			if (MaxDigitNum == -1)
+			if (MaxDigitNum == 0)
 			{
 				//unlimited digits
 				PrepareNumberRenderers(digitNum);
