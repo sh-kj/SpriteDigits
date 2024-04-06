@@ -1,6 +1,6 @@
 # Sprite Digits for Unity-R3
 
-Japanese Document here: https://github.com/sh-kj/SpriteDigits.git?path=Unity-R3/ReactiveTween/README-ja.md
+Japanese Document here: https://github.com/sh-kj/SpriteDigits.git?path=Unity-R3/SpriteDigits/README-ja.md
 
 Number Display System Using 0 to 9 Sprites.  
 You can use your original number images to display digits.
