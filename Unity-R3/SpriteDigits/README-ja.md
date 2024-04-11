@@ -7,6 +7,13 @@ Unityの`RectTransform`を利用して、必ずRectの内部に収まるよう�
 
 画像表示の実体に使うシステムは`UnityEngine.SpriteRenderer`または`UnityEngine.UI.Image`を選択できます。
 
+## git URLからのインストール
+
+前提としてR3 https://github.com/Cysharp/R3.git のインストールが必要です。
+
+Package Managerの`Add package from git URL`より  
+https://github.com/sh-kj/SpriteDigits.git?path=Unity-R3/SpriteDigits を指定してインストールしてください。
+
 # 使用法
 
 ## 数値画像のSpriteを用意
