@@ -208,14 +208,21 @@ namespace radiants.SpriteDigits
 				var spriteBounds = disp.sprite.bounds;
 
 				//spriteBounds.min
-				SetDisplayPosition(ref caret, disp.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				SetDisplayPosition(ref caret, disp, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//set minus renderer if display
 			if(displayMinus)
 			{
-				SetDisplayPosition(ref caret, MinusDisplay.transform, HorizontalPivot, VerticalPivot, MinusDisplay.sprite.bounds,
+				SetDisplayPosition(ref caret, MinusDisplay, VerticalPivot, MinusDisplay.sprite.bounds,
 					letterScale, Spacing * spacingScale);
+			}
+			else
+			{
+				//reset transform
+				var trans = MinusDisplay.transform;
+				trans.localPosition = Vector3.zero;
+				trans.localScale = Vector3.one;
 			}
 		}
 

@@ -351,7 +351,7 @@ namespace radiants.SpriteDigits
 			return origin;
 		}
 
-		protected static void SetDisplayPosition(ref Vector3 caret, Transform trans, HorizontalPivot horizontal, VerticalPivot vertical,
+		protected static void SetDisplayPosition(ref Vector3 caret, DigitsDisplayContainer display, VerticalPivot vertical,
 			Bounds spriteBounds, float scale, float spacing)
 		{
 			Vector3 offset = new Vector3();
@@ -366,8 +366,21 @@ namespace radiants.SpriteDigits
 					break;
 			}
 
-			trans.localPosition = caret + offset;
-			trans.localScale = new Vector3(scale, scale, 1f);
+			switch (display.DispMode)
+			{
+				case DisplayMode.Image:
+					RectTransform rect = display.ImageRect;
+					rect.localPosition = caret + offset;
+					rect.sizeDelta = new Vector2(spriteBounds.size.x, spriteBounds.size.y) * scale;
+					rect.localScale = Vector3.one;
+					break;
+				case DisplayMode.Sprite:
+				default:
+					Transform trans = display.transform;
+					trans.localPosition = caret + offset;
+					trans.localScale = new Vector3(scale, scale, 1f);
+					break;
+			}
 
 			caret.x -= spriteBounds.size.x * scale + spacing;
 		}

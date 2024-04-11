@@ -252,29 +252,36 @@ namespace radiants.SpriteDigits
 			//after point
 			for (int i = 0; i < DisplayDecimalPlaces; i++)
 			{
-				var renderer = NumberDisplays[i];
-				var spriteBounds = renderer.sprite.bounds;
-				SetDisplayPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				var disp = NumberDisplays[i];
+				var spriteBounds = disp.sprite.bounds;
+				SetDisplayPosition(ref caret, disp, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//point
-			SetDisplayPosition(ref caret, DecimalPointDisplay.transform, HorizontalPivot, VerticalPivot, DecimalPointDisplay.sprite.bounds,
+			SetDisplayPosition(ref caret, DecimalPointDisplay, VerticalPivot, DecimalPointDisplay.sprite.bounds,
 				letterScale, Spacing * spacingScale);
 
 			//before point
 			for (int i = 0; i < digitsBeforePoint; i++)
 			{
 				int index = i + DisplayDecimalPlaces;
-				var renderer = NumberDisplays[index];
-				var spriteBounds = renderer.sprite.bounds;
-				SetDisplayPosition(ref caret, renderer.transform, HorizontalPivot, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
+				var disp = NumberDisplays[index];
+				var spriteBounds = disp.sprite.bounds;
+				SetDisplayPosition(ref caret, disp, VerticalPivot, spriteBounds, letterScale, Spacing * spacingScale);
 			}
 
 			//set minus renderer if display
 			if (displayMinus)
 			{
-				SetDisplayPosition(ref caret, MinusDisplay.transform, HorizontalPivot, VerticalPivot, MinusDisplay.sprite.bounds,
+				SetDisplayPosition(ref caret, MinusDisplay, VerticalPivot, MinusDisplay.sprite.bounds,
 					letterScale, Spacing * spacingScale);
+			}
+			else
+			{
+				//reset transform
+				var trans = MinusDisplay.transform;
+				trans.localPosition = Vector3.zero;
+				trans.localScale = Vector3.one;
 			}
 		}
 

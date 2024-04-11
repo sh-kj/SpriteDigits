@@ -47,6 +47,7 @@ namespace radiants.SpriteDigits
 			{
 				case DisplayMode.Image:
 					MyImage = image;
+					ImageRect = image.rectTransform;
 					break;
 				case DisplayMode.Sprite:
 				default:
@@ -57,8 +58,9 @@ namespace radiants.SpriteDigits
 
 		private SpriteRenderer MySpriteRenderer;
 		private UnityEngine.UI.Image MyImage;
+		public RectTransform ImageRect { get; private set; }
 
-		private DisplayMode DispMode;
+		public DisplayMode DispMode { get; private set; }
 
 		public void SetSort(int layerID, int orderInLayer)
 		{
